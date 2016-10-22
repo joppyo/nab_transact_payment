@@ -3,17 +3,20 @@
 /**
  * @file
  * Credit-card helper functions copied from Drupal commerce.
- * see commerce_payment.credit_card.inc
+ *
+ * See commerce_payment.credit_card.inc.
  */
 
 /**
+ * Credit card form build.
+ *
  * Returns a set of credit card form elements that payment method modules can
  *   incorporate into their submission form callbacks.
  *
- * @param $fields
+ * @param array $fields
  *   An array specifying the CC fields that should be included on the form; the
  *     card number and expiration date fields are always present.
- * @param $default
+ * @param array $default
  *   An array of default values for the available CC fields.
  */
 function nab_transact_payment_credit_card_form($fields = array(), $default = array()) {
@@ -182,15 +185,15 @@ function nab_transact_payment_credit_card_form($fields = array(), $default = arr
 /**
  * Validates a set of credit card details entered via the credit card form.
  *
- * @param $details
+ * @param array $details
  *   An array of credit card details as retrieved from the credit card array in
  *   the form values of a form containing the credit card form.
- * @param $settings
+ * @param array $settings
  *   Settings used for calling validation functions and setting form errors:
  *   - form_parents: an array of parent elements identifying where the credit
- *     card form was situated in the form array
+ *     card form was situated in the form array.
  *
- * @return
+ * @return bool
  *   TRUE or FALSE indicating the validity of all the data.
  *
  * @see nab_transact_payment_credit_card_form()
@@ -249,16 +252,16 @@ function nab_transact_payment_credit_card_validate($details, $settings) {
 /**
  * Validates a credit card number using an array of approved card types.
  *
- * @param $number
+ * @param string $number
  *   The credit card number to validate.
- * @param $card_types
+ * @param array $card_types
  *   An array of credit card types containing any of the keys from the array
- *   returned by nab_transact_payment_credit_card_types(). Only numbers determined
- *   to be of the types specified will pass validation. This determination is
- *   based on the length of the number and the valid number ranges for the
- *   various types of known credit card types.
+ *   returned by nab_transact_payment_credit_card_types(). Only numbers
+ *   determined to be of the types specified will pass validation. This
+ *   determination is based on the length of the number and the valid number
+ *   ranges for the various types of known credit card types.
  *
- * @return
+ * @return string|bool
  *   FALSE if a number is not valid based on approved credit card types or the
  *   credit card type if it is valid and coud be determined.
  *
@@ -408,10 +411,10 @@ function nab_transact_payment_validate_credit_card_type($number, $card_types) {
 /**
  * Validates a credit card number using the Luhn algorithm.
  *
- * @param $number
+ * @param string $number
  *   The credit card number to validate.
  *
- * @return
+ * @return bool
  *   TRUE or FALSE indicating the number's validity.
  *
  * @see http://www.merriampark.com/anatomycc.htm
@@ -446,12 +449,12 @@ function nab_transact_payment_validate_credit_card_number($number) {
 /**
  * Validates a credit card start date.
  *
- * @param $month
+ * @param int $month
  *   The 1 or 2-digit numeric representation of the month, i.e. 1, 6, 12.
- * @param $year
+ * @param int $year
  *   The 4-digit numeric representation of the year, i.e. 2010.
  *
- * @return
+ * @return bool
  *   TRUE for cards whose start date is blank (both month and year) or in the
  *   past, 'year' or 'month' for expired cards indicating which value should
  *   receive the error.
@@ -484,12 +487,12 @@ function nab_transact_payment_validate_credit_card_start_date($month, $year) {
 /**
  * Validates a credit card expiration date.
  *
- * @param $month
+ * @param int $month
  *   The 1 or 2-digit numeric representation of the month, i.e. 1, 6, 12.
- * @param $year
+ * @param int $year
  *   The 4-digit numeric representation of the year, i.e. 2010.
  *
- * @return
+ * @return bool
  *   TRUE for non-expired cards, 'year' or 'month' for expired cards indicating
  *   which value should receive the error.
  */
@@ -524,12 +527,12 @@ function nab_transact_payment_validate_credit_card_issue($issue) {
 /**
  * Validates a card security code based on the type of the credit card.
  *
- * @param $number
+ * @param string $number
  *   The number of the credit card to validate the security code against.
- * @param $code
+ * @param string $code
  *   The card security code to validate with the given number.
  *
- * @return
+ * @return bool
  *   TRUE or FALSE indicating the security code's validity.
  */
 function nab_transact_payment_validate_credit_card_security_code($number, $code) {

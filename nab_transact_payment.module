@@ -55,20 +55,6 @@ function nab_transact_payment_payment_method_insert(PaymentMethod $payment_metho
 /**
  * Implements hook_ENTITY_TYPE_ACTION().
  */
-/*
-function nab_transact_payment_payment_insert(Payment $payment) {
-  if ($payment->method->controller instanceof NabTransactPaymentPaymentMethodController) {
-    $values = array_merge($payment->method_data, array(
-      'pid' => $payment->pid,
-    ));
-    drupal_write_record('nab_transact_payment', $values);
-  }
-}
-*/
-
-/**
- * Implements hook_ENTITY_TYPE_ACTION().
- */
 function nab_transact_payment_payment_method_update(PaymentMethod $payment_method) {
   if ($payment_method->controller->name == 'NabTransactPaymentPaymentMethodController') {
     $query = db_update('nab_transact_payment_method');
@@ -166,22 +152,26 @@ function nab_transact_payment_payment_method_configuration_form_elements_validat
 }
 
 /**
+ * Form build callback.
+ *
  * Implements
  * PaymentMethodController::payment_configuration_form_elements_callback.
  */
 function nab_transact_payment_payment_configuration_form_elements(array $element, array &$form_state) {
   module_load_include('inc', 'nab_transact_payment', 'includes/nab_transact_payment.credit_card');
-  return nab_transact_payment_credit_card_form(array('owner' => '','code' => ''));
+  return nab_transact_payment_credit_card_form(array('owner' => '', 'code' => ''));
 }
 
 /**
+ * Form validate callback.
+ *
  * Implements validate for
  * PaymentMethodController::payment_configuration_form_elements_callback.
  */
 function nab_transact_payment_payment_configuration_form_elements_validate(array $element, array &$form_state) {
   if (isset($element['credit_card'])) {
     $settings = array(
-      'form_parents' => $element['credit_card']['#parents']
+      'form_parents' => $element['credit_card']['#parents'],
     );
     $details = drupal_array_get_nested_value($form_state['values'], $element['credit_card']['#parents']);
 

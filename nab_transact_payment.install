@@ -92,7 +92,7 @@ function nab_transact_payment_schema() {
 }
 
 /**
- * Update txn_id to allow null value
+ * Update txn_id to allow null value.
  */
 function nab_transact_payment_update_7001() {
   db_change_field('nab_transact_payment', 'txn_id', 'txn_id', array(
