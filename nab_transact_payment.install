@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * @file
+ * Installation and uninstallation functions.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function nab_transact_payment_schema() {
+  $schema['nab_transact_payment'] = array(
+    'fields' => array(
+      'created' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'pid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status_code' => array(
+        'type' => 'varchar',
+        'length' => 3,
+        'not null' => TRUE,
+      ),
+      'status_description' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+      ),
+      'txn_id' => array(
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => FALSE,
+      ),
+      'response_code' => array(
+        'type' => 'varchar',
+        'length' => 3,
+        'not null' => TRUE,
+      ),
+      'response_text' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('pid'),
+    'unique keys' => array(
+      'txn_id' => array('txn_id'),
+    ),
+  );
+  $schema['nab_transact_payment_method'] = array(
+    'fields' => array(
+      'merchant_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'password' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'pmid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'txn_type' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'mode' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('pmid'),
+    'unique keys' => array(
+      'pmid' => array('pmid'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Update txn_id to allow null value
+ */
+function nab_transact_payment_update_7001() {
+  db_change_field('nab_transact_payment', 'txn_id', 'txn_id', array(
+    'type' => 'varchar',
+    'length' => 16,
+    'not null' => FALSE,
+  ));
+}

@@ -1,0 +1,6 @@
+name = NAB Transact Payment Method
+description = Provides NAB Transact XML API payment method type.
+package = Payment
+core = 7.x
+dependencies[] = payment
+files[] = includes/NabTransactPaymentPaymentMethodController.inc

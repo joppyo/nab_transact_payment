@@ -1,0 +1,195 @@
+<?php
+
+/**
+ * @file
+ * Contains hook implementations and global functions.
+ */
+
+/**
+ * Implements hook_payment_method_controller_info().
+ */
+function nab_transact_payment_payment_method_controller_info() {
+  return array('NabTransactPaymentPaymentMethodController');
+}
+
+/**
+ * Implements hook_entity_load().
+ */
+function nab_transact_payment_entity_load(array $entities, $entity_type) {
+  if ($entity_type == 'payment_method') {
+    $pmids = array();
+    foreach ($entities as $payment_method) {
+      if ($payment_method->controller->name == 'NabTransactPaymentPaymentMethodController') {
+        $pmids[] = $payment_method->pmid;
+      }
+    }
+    if ($pmids) {
+      $query = db_select('nab_transact_payment_method')
+        ->fields('nab_transact_payment_method')
+        ->condition('pmid', $pmids);
+      $result = $query->execute();
+      while ($data = $result->fetchAssoc()) {
+        $payment_method = $entities[$data['pmid']];
+        $payment_method->controller_data = (array) $data;
+        unset($payment_method->controller_data['pmid']);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_ACTION().
+ */
+function nab_transact_payment_payment_method_insert(PaymentMethod $payment_method) {
+  if ($payment_method->controller->name == 'NabTransactPaymentPaymentMethodController') {
+    $payment_method->controller_data += $payment_method->controller->controller_data_defaults;
+    $query = db_insert('nab_transact_payment_method');
+    $values = array_merge($payment_method->controller_data, array(
+      'pmid' => $payment_method->pmid,
+    ));
+    $query->fields($values);
+    $query->execute();
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_ACTION().
+ */
+/*
+function nab_transact_payment_payment_insert(Payment $payment) {
+  if ($payment->method->controller instanceof NabTransactPaymentPaymentMethodController) {
+    $values = array_merge($payment->method_data, array(
+      'pid' => $payment->pid,
+    ));
+    drupal_write_record('nab_transact_payment', $values);
+  }
+}
+*/
+
+/**
+ * Implements hook_ENTITY_TYPE_ACTION().
+ */
+function nab_transact_payment_payment_method_update(PaymentMethod $payment_method) {
+  if ($payment_method->controller->name == 'NabTransactPaymentPaymentMethodController') {
+    $query = db_update('nab_transact_payment_method');
+    $values = array_merge($payment_method->controller_data, array(
+      'pmid' => $payment_method->pmid,
+    ));
+    $query->fields($values);
+    $query->condition('pmid', $payment_method->pmid);
+    $query->execute();
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_ACTION().
+ */
+function nab_transact_payment_payment_method_delete($entity) {
+  if ($entity->controller->name == 'NabTransactPaymentPaymentMethodController') {
+    db_delete('nab_transact_payment_method')
+      ->condition('pmid', $entity->pmid)
+      ->execute();
+  }
+}
+
+/**
+ * Form build callback.
+ *
+ * Implements
+ * PaymentMethodController::payment_method_configuration_form_elements_callback.
+ */
+function nab_transact_payment_payment_method_configuration_form_elements(array $form, array &$form_state) {
+  $payment_method = $form_state['payment_method'];
+  $controller = $payment_method->controller;
+  $controller_data = $payment_method->controller_data + $controller->controller_data_defaults;
+  $form = array();
+
+  $elements['authentication'] = array(
+    '#title' => t('Authentication'),
+    '#type' => 'fieldset',
+  );
+  $elements['authentication']['merchant_id'] = array(
+    '#default_value' => $controller_data['merchant_id'],
+    '#title' => t('Merchant ID'),
+    '#required' => TRUE,
+    '#type' => 'textfield',
+  );
+  $elements['authentication']['password'] = array(
+    '#default_value' => $controller_data['password'],
+    '#description' => t('The password will be stored as plain text.'),
+    '#title' => t('Password'),
+    '#required' => TRUE,
+    '#type' => 'textfield',
+  );
+  $elements['workflow'] = array(
+    '#title' => t('Workflow'),
+    '#type' => 'fieldset',
+  );
+  $elements['workflow']['mode'] = array(
+    '#default_value' => $controller_data['mode'],
+    '#options' => array(
+      'live' => t('Live'),
+      'test' => t('Test'),
+    ),
+    '#required' => TRUE,
+    '#title' => t('Mode'),
+    '#type' => 'radios',
+  );
+  $elements['workflow']['txn_type'] = array(
+    '#default_value' => $controller_data['txn_type'],
+    '#options' => array(
+      $controller::STANDARD_PAYMENT => t('Standard Payment'),
+      $controller::PREAUTH_COMPLETE => t('Preauth Complete (Advice)'),
+    ),
+    '#required' => TRUE,
+    '#title' => t('Transaction Type'),
+    '#type' => 'select',
+  );
+
+  return $elements;
+}
+
+/**
+ * Form validate callback.
+ *
+ * Implements form validate callback for
+ * nab_transact_payment_payment_method_configuration_form_elements().
+ */
+function nab_transact_payment_payment_method_configuration_form_elements_validate(array $element, array &$form_state) {
+  $values = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
+
+  $controller_data = &$form_state['payment_method']->controller_data;
+  $controller_data['merchant_id'] = $values['authentication']['merchant_id'];
+  $controller_data['password'] = $values['authentication']['password'];
+  $controller_data['mode'] = $values['workflow']['mode'];
+  $controller_data['txn_type'] = $values['workflow']['txn_type'];
+}
+
+/**
+ * Implements
+ * PaymentMethodController::payment_configuration_form_elements_callback.
+ */
+function nab_transact_payment_payment_configuration_form_elements(array $element, array &$form_state) {
+  module_load_include('inc', 'nab_transact_payment', 'includes/nab_transact_payment.credit_card');
+  return nab_transact_payment_credit_card_form(array('owner' => '','code' => ''));
+}
+
+/**
+ * Implements validate for
+ * PaymentMethodController::payment_configuration_form_elements_callback.
+ */
+function nab_transact_payment_payment_configuration_form_elements_validate(array $element, array &$form_state) {
+  if (isset($element['credit_card'])) {
+    $settings = array(
+      'form_parents' => $element['credit_card']['#parents']
+    );
+    $details = drupal_array_get_nested_value($form_state['values'], $element['credit_card']['#parents']);
+
+    module_load_include('inc', 'nab_transact_payment', 'includes/nab_transact_payment.credit_card');
+    $validated = nab_transact_payment_credit_card_validate($details, $settings);
+
+    if ($validated) {
+      $form_state['payment']->method_data['credit_card'] = $details;
+    }
+  }
+}
